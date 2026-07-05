@@ -36,7 +36,7 @@ Takım 117
 
 ## Product Backlog URL
 
-[Taiga Backlog Panomuz](Buraya Taiga linkinizi yapıştırın)
+[Taiga Backlog Panomuz](https://tree.taiga.io/project/canbmaj7-akaflow/kanban)
 
 ---
 
@@ -47,16 +47,16 @@ Takım 117
 - **Daily Scrum**: Zamansal senkronizasyonu optimize etmek ve zamanı verimli kullanmak adına Daily Scrum toplantılarının Slack üzerinden yazılı olarak yapılmasına karar verilmiştir[cite: 1]. Günlük ilerlemeler, engeller (blocker) ve yapılacak işler her gün düzenli olarak raporlanmıştır[cite: 1]. Rapor örnekleri repo içerisindeki dökümantasyon klasöründe yer almaktadır[cite: 1].
 
 - **Sprint board update**: Sprint 1 sonu güncel Taiga Kanban Board ekran görüntümüz:
-![Taiga Board](ProjectManagement/Sprint1Documents/image_54511c.png)
+![Taiga Board](ProjectManagement/Sprint1Documents/backlog3.png)
 
 - **Ürün Durumu**: 1. Sprint çıktısı olarak projenin teknik temelleri atılmıştır[cite: 1]. Bu sprintte **Veri Bilimi** tarafında makine öğrenmesi modelini eğitmek için sentetik veri seti üretilmiş ve bu veriyle ilk tahminleme modeli oluşturulmuştur. **AI Agent** tarafında ise LLM entegrasyonu tamamlanarak doğal dildeki soruları API üzerinden yanıtlayabilen çalışan ilk `/api/v1/agent/ask` endpoint prototipi ayağa kaldırılmıştır. Backend tarafında FastAPI ve veritabanı şemaları kurulmuştur.
 
   #### Veri Bilimi - Model Özellik Önem Sırası (Feature Importance)
-  ![Data Science Model](ProjectManagement/Sprint1Documents/image_545848.png)
+  ![Data Science Model](ProjectManagement/Sprint1Documents/backlog1.png)
   *Eğitilen Churn modelimizde kurs türü, eğitim durumu ve ödeme yöntemi gibi metriklerin öğrencilerin kursa devamlılığı üzerindeki etkisi matematiksel olarak doğrulanmıştır.*
 
   #### Backend & AI Agent API Arayüzü (Swagger UI)
-  ![FastAPI Swagger UI](ProjectManagement/Sprint1Documents/image_5458a4.png)
+  ![FastAPI Swagger UI](ProjectManagement/Sprint1Documents/backlog2.png)
   *AkaFlow AI Agent Platformu üzerinden `/api/v1/agent/ask` endpoint'i aktif olarak sorguları kabul etmektedir.*
 
 - **Sprint Review**: 
@@ -75,3 +75,4 @@ Yapılan toplantıda 1. Sprint hedeflerine başarıyla ulaşıldığı görülm�
 ---
 
 # Sprint 3
+
