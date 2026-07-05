@@ -6,11 +6,11 @@ Takım 117
 
 ## Takım Elemanları
 
-- [Ad Soyad]: Product Owner / Frontend Developer
 - Ahmet Can Otlu: Scrum Master / Full-Stack Developer
-- [Ad Soyad]: Data Science Developer
-- [Ad Soyad]: Data Science Developer
-- [Ad Soyad]: AI Agent & LLM Developer
+- Nurgül Abut: Product Owner / Data Science Developer
+- Ömer Faruk Bütün: Data Science Developer
+- Fatma Nisa Paktunç: AI Agent & LLM Developer
+- Nida Elvin Mertoğlu: AI Agent & LLM Developer
 
 ## Ürün İsmi
 
