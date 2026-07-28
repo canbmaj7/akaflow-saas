@@ -1,0 +1,7 @@
+{
+  "ogrenci_id": "Öğrencinin benzersiz kimlik numarası",
+  "devamsizlik_orani": "Öğrencinin derslere katılmama yüzdesi (0 ile 1 arası)",
+  "tamamlanan_odev_orani": "Öğrencinin ödevlerini tamamlama yüzdesi",
+  "son_odeme_gecikme_gun_sayisi": "Son ödemede yaşanan gecikme süresi (gün)",
+  "memnuniyet_skoru": "1-5 arası öğrenci memnuniyet puanı"
+}
