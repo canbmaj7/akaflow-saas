@@ -19,6 +19,10 @@ Supabase PostgreSQL migration ve seed dosyaları.
 | 4 | `migrations/004_init_attendance.sql` |
 | 5 | `migrations/005_rls_policies.sql` |
 | 6 | `migrations/006_grants.sql` |
+| 7 | `migrations/007_academies_update_policy.sql` |
+| 8 | `migrations/008_student_churn_columns.sql` |
+| 9 | `migrations/009_student_birth_date.sql` |
+| 10 | `migrations/010_init_homework.sql` |
 
 ## Demo Seed
 

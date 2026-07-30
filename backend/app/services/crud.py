@@ -76,6 +76,32 @@ def upsert_attendance_row(
     return response.data[0]
 
 
+def upsert_homework_row(
+    supabase: Client,
+    payload: dict[str, Any],
+    academy_id: UUID,
+) -> dict[str, Any]:
+    """Aynı öğrenci + vade tarihi varsa ödev kaydını günceller."""
+    data = {**payload, "academy_id": str(academy_id), "updated_at": _now_iso()}
+    try:
+        response = (
+            supabase.table("homework")
+            .upsert(data, on_conflict="student_id,due_date")
+            .execute()
+        )
+    except APIError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=exc.message or "Ödev kaydedilemedi",
+        ) from exc
+    if not response.data:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ödev kaydedilemedi",
+        )
+    return response.data[0]
+
+
 def update_row(
     supabase: Client,
     table: str,

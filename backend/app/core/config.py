@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
@@ -19,7 +23,12 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str | None = None
     SMTP_FROM: str | None = None
     REMINDER_DAYS_BEFORE: int = 3
+    REMINDER_CRON_HOUR: int = 8
+    ENABLE_SCHEDULER: bool = True
+    GEMINI_MODEL: str = "gemini-2.5-flash"
     DATABASE_URL: str | None = None
+    MODEL_PATH: str = str(REPO_ROOT / "models" / "final_logistic_model_v2.pkl")
+    THRESHOLD_PATH: str = str(REPO_ROOT / "data" / "final_logistic_threshold_v2.json")
 
     TEST_USER_A_EMAIL: str | None = None
     TEST_USER_A_PASSWORD: str | None = None

@@ -7,6 +7,7 @@ from supabase import Client
 from app.api.deps import get_academy_id, get_supabase_client
 from app.schemas.payment import PaymentCreate, PaymentRead, PaymentUpdate
 from app.services.crud import delete_row, get_row_by_id, insert_row, list_rows, update_row
+from app.services.ml_features import recalculate_student_features
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 
@@ -27,6 +28,7 @@ def create_payment(
 ) -> PaymentRead:
     payload = body.model_dump(mode="json", exclude_none=True)
     row = insert_row(supabase, "payments", payload, academy_id)
+    recalculate_student_features(supabase, UUID(row["student_id"]))
     return PaymentRead.model_validate(row)
 
 
@@ -45,8 +47,11 @@ def update_payment(
     body: PaymentUpdate,
     supabase: Annotated[Client, Depends(get_supabase_client)],
 ) -> PaymentRead:
+    existing = get_row_by_id(supabase, "payments", payment_id)
     payload = body.model_dump(mode="json", exclude_none=True)
     row = update_row(supabase, "payments", payment_id, payload)
+    student_id = UUID(row.get("student_id") or existing["student_id"])
+    recalculate_student_features(supabase, student_id)
     return PaymentRead.model_validate(row)
 
 

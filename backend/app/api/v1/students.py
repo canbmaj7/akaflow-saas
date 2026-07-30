@@ -15,8 +15,16 @@ from app.services.crud import (
     list_rows,
     update_row,
 )
+from app.services.age_utils import age_from_birth_date
+from app.services.ml_features import apply_course_defaults, recalculate_student_features
 
 router = APIRouter(prefix="/students", tags=["students"])
+
+
+def _with_synced_age(payload: dict) -> dict:
+    if "birth_date" in payload and payload["birth_date"]:
+        payload["age"] = age_from_birth_date(payload["birth_date"])
+    return payload
 
 
 @router.get("", response_model=list[StudentRead])
@@ -41,8 +49,12 @@ def create_student(
             detail="Öğrenci limiti doldu. Paketinizi yükseltin.",
         )
 
-    payload = body.model_dump(mode="json", exclude_none=True)
+    payload = _with_synced_age(
+        apply_course_defaults(body.model_dump(mode="json", exclude_none=True))
+    )
     row = insert_row(supabase, "students", payload, academy_id)
+    recalculate_student_features(supabase, UUID(row["id"]))
+    row = get_row_by_id(supabase, "students", UUID(row["id"]))
     return StudentRead.model_validate(row)
 
 
@@ -61,8 +73,12 @@ def update_student(
     body: StudentUpdate,
     supabase: Annotated[Client, Depends(get_supabase_client)],
 ) -> StudentRead:
-    payload = body.model_dump(mode="json", exclude_none=True)
+    payload = _with_synced_age(
+        apply_course_defaults(body.model_dump(mode="json", exclude_none=True))
+    )
     row = update_row(supabase, "students", student_id, payload)
+    recalculate_student_features(supabase, student_id)
+    row = get_row_by_id(supabase, "students", student_id)
     return StudentRead.model_validate(row)
 
 

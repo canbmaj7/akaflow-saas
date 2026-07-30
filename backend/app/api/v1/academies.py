@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.api.deps import get_academy_id, get_current_user_id, get_supabase_client
 from app.core.supabase_client import create_service_supabase_client
-from app.schemas.academy import AcademyCreate, AcademyRead
+from app.schemas.academy import AcademyCreate, AcademyRead, AcademyUpdate
 from supabase import Client
 
 router = APIRouter(prefix="/academies", tags=["academies"])
@@ -26,6 +26,27 @@ def get_my_academy(
     )
     if not result.data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Akademi bulunamadı")
+    return AcademyRead.model_validate(result.data[0])
+
+
+@router.patch("/me", response_model=AcademyRead)
+def update_my_academy(
+    body: AcademyUpdate,
+    supabase: Annotated[Client, Depends(get_supabase_client)],
+    academy_id: Annotated[UUID, Depends(get_academy_id)],
+) -> AcademyRead:
+    payload = body.model_dump(mode="json", exclude_none=True)
+    if not payload:
+        return get_my_academy(supabase, academy_id)
+
+    result = (
+        supabase.table("academies")
+        .update(payload)
+        .eq("id", str(academy_id))
+        .execute()
+    )
+    if not result.data:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Akademi güncellenemedi")
     return AcademyRead.model_validate(result.data[0])
 
 

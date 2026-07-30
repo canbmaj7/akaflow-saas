@@ -8,15 +8,19 @@ import { Button } from "@/components/ui/button";
 import { Field, inputClass } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { api } from "@/lib/api/client";
+import { formatAgeLabel } from "@/lib/age";
 import type { NotifyTarget, Student, StudentStatus } from "@/types";
-import { NOTIFY_TARGET_LABEL, STUDENT_STATUS_LABEL } from "@/types";
+import { COURSE_TYPES, EDUCATION_LEVELS, STUDENT_STATUS_LABEL } from "@/types";
 
 type FormState = {
   name: string;
   email: string;
   parent_email: string;
   notify_target: NotifyTarget;
+  birth_date: string;
   enrollment_date: string;
+  course_type: string;
+  education_level: string;
   status: StudentStatus;
 };
 
@@ -25,7 +29,10 @@ const emptyForm: FormState = {
   email: "",
   parent_email: "",
   notify_target: "student",
+  birth_date: "",
   enrollment_date: "",
+  course_type: "",
+  education_level: "",
   status: "active",
 };
 
@@ -33,6 +40,7 @@ export default function StudentsPage() {
   const { accessToken } = useAuth();
   const [students, setStudents] = useState<Student[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | StudentStatus>("all");
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Student | null>(null);
@@ -42,7 +50,8 @@ export default function StudentsPage() {
 
   const loadData = useCallback(() => {
     if (!accessToken) return;
-    api.getStudents(accessToken)
+    api
+      .getStudents(accessToken)
       .then(setStudents)
       .catch((err: Error) => setError(err.message));
   }, [accessToken]);
@@ -53,14 +62,21 @@ export default function StudentsPage() {
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return students;
-    return students.filter(
-      (s) =>
+    return students.filter((s) => {
+      if (statusFilter !== "all" && s.status !== statusFilter) return false;
+      if (!query) return true;
+      return (
         s.name.toLowerCase().includes(query) ||
         (s.email?.toLowerCase().includes(query) ?? false) ||
-        (s.parent_email?.toLowerCase().includes(query) ?? false),
-    );
-  }, [students, search]);
+        (s.parent_email?.toLowerCase().includes(query) ?? false)
+      );
+    });
+  }, [students, search, statusFilter]);
+
+  const previewAge = useMemo(
+    () => formatAgeLabel(form.birth_date || null, null),
+    [form.birth_date],
+  );
 
   function openCreate() {
     setEditing(null);
@@ -76,7 +92,10 @@ export default function StudentsPage() {
       email: student.email ?? "",
       parent_email: student.parent_email ?? "",
       notify_target: student.notify_target,
+      birth_date: student.birth_date ?? "",
       enrollment_date: student.enrollment_date ?? "",
+      course_type: student.course_type ?? "",
+      education_level: student.education_level ?? "",
       status: student.status,
     });
     setFormError(null);
@@ -88,12 +107,20 @@ export default function StudentsPage() {
     if (!accessToken) return;
     setSubmitting(true);
     setFormError(null);
+    if (!form.course_type) {
+      setFormError("Kurs türü seçilmelidir.");
+      setSubmitting(false);
+      return;
+    }
     const payload = {
       name: form.name.trim(),
       email: form.email.trim() || null,
       parent_email: form.parent_email.trim() || null,
       notify_target: form.notify_target,
+      birth_date: form.birth_date || null,
       enrollment_date: form.enrollment_date || null,
+      course_type: form.course_type,
+      education_level: form.education_level || null,
       status: form.status,
     };
     try {
@@ -108,6 +135,17 @@ export default function StudentsPage() {
       setFormError(err instanceof Error ? err.message : "Kayıt başarısız");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleToggleStatus(student: Student) {
+    if (!accessToken) return;
+    const next: StudentStatus = student.status === "active" ? "inactive" : "active";
+    try {
+      await api.updateStudent(accessToken, student.id, { status: next });
+      loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Durum güncellenemedi");
     }
   }
 
@@ -126,7 +164,9 @@ export default function StudentsPage() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Öğrenciler</h1>
-          <p className="text-sm text-zinc-500">Kayıt, veli bilgisi ve bildirim hedefi</p>
+          <p className="text-sm text-zinc-500">
+            Kayıt, kurs ve profil bilgileri. Durum sütunundaki rozete tıklayarak aktif/pasif değiştirebilirsiniz.
+          </p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="h-4 w-4" />
@@ -135,21 +175,35 @@ export default function StudentsPage() {
       </div>
 
       <Card>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Ara..."
-          className={`mb-4 w-full ${inputClass}`}
-        />
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Ara..."
+            className={`w-full sm:max-w-xs ${inputClass}`}
+          />
+          <div className="flex gap-2">
+            {(["all", "active", "inactive"] as const).map((value) => (
+              <Button
+                key={value}
+                variant={statusFilter === value ? "primary" : "secondary"}
+                className="h-8 px-3 text-xs"
+                onClick={() => setStatusFilter(value)}
+              >
+                {value === "all" ? "Tümü" : STUDENT_STATUS_LABEL[value]}
+              </Button>
+            ))}
+          </div>
+        </div>
         {error && <p className="mb-4 text-sm text-rose-700">{error}</p>}
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-sm">
             <thead className="border-b text-zinc-500">
               <tr>
                 <th className="px-2 py-2">Ad</th>
-                <th className="px-2 py-2">E-posta</th>
-                <th className="px-2 py-2">Veli</th>
-                <th className="px-2 py-2">Bildirim</th>
+                <th className="px-2 py-2">Yaş</th>
+                <th className="px-2 py-2">Kurs</th>
+                <th className="px-2 py-2">Eğitim</th>
                 <th className="px-2 py-2">Durum</th>
                 <th className="px-2 py-2">İşlem</th>
               </tr>
@@ -158,13 +212,22 @@ export default function StudentsPage() {
               {filtered.map((student) => (
                 <tr key={student.id} className="border-b border-zinc-100">
                   <td className="px-2 py-3 font-medium">{student.name}</td>
-                  <td className="px-2 py-3">{student.email ?? "—"}</td>
-                  <td className="px-2 py-3">{student.parent_email ?? "—"}</td>
-                  <td className="px-2 py-3">{NOTIFY_TARGET_LABEL[student.notify_target]}</td>
                   <td className="px-2 py-3">
-                    <Badge tone={student.status === "active" ? "success" : "default"}>
-                      {STUDENT_STATUS_LABEL[student.status]}
-                    </Badge>
+                    {formatAgeLabel(student.birth_date, student.age)}
+                  </td>
+                  <td className="px-2 py-3">{student.course_type ?? "—"}</td>
+                  <td className="px-2 py-3">{student.education_level ?? "—"}</td>
+                  <td className="px-2 py-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleStatus(student)}
+                      title="Tıklayarak aktif ↔ pasif değiştir"
+                      className="cursor-pointer rounded-full transition hover:opacity-80"
+                    >
+                      <Badge tone={student.status === "active" ? "success" : "default"}>
+                        {STUDENT_STATUS_LABEL[student.status]}
+                      </Badge>
+                    </button>
                   </td>
                   <td className="px-2 py-3">
                     <div className="flex gap-1">
@@ -188,6 +251,70 @@ export default function StudentsPage() {
           <Field label="Ad soyad" htmlFor="name">
             <input id="name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={inputClass} />
           </Field>
+          <Field label="Doğum tarihi" htmlFor="birth_date">
+            <input
+              id="birth_date"
+              type="date"
+              value={form.birth_date}
+              onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
+              className={inputClass}
+            />
+            {form.birth_date && (
+              <p className="mt-1 text-xs text-slate-500">Yaş: {previewAge}</p>
+            )}
+          </Field>
+          <Field label="Eğitim durumu" htmlFor="education_level">
+            <select
+              id="education_level"
+              value={form.education_level}
+              onChange={(e) => setForm({ ...form, education_level: e.target.value })}
+              className={inputClass}
+            >
+              <option value="">Seçin</option>
+              {EDUCATION_LEVELS.map((level) => (
+                <option key={level} value={level}>{level}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Kurs türü" htmlFor="course_type">
+            <select
+              id="course_type"
+              required
+              value={form.course_type}
+              onChange={(e) => setForm({ ...form, course_type: e.target.value })}
+              className={inputClass}
+            >
+              <option value="">Seçin</option>
+              {COURSE_TYPES.map((course) => (
+                <option key={course} value={course}>{course}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Kayıt tarihi" htmlFor="enrollment_date">
+            <input
+              id="enrollment_date"
+              type="date"
+              value={form.enrollment_date}
+              onChange={(e) => setForm({ ...form, enrollment_date: e.target.value })}
+              className={inputClass}
+            />
+          </Field>
+          {editing && (
+            <Field label="Öğrenci durumu" htmlFor="status">
+              <select
+                id="status"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value as StudentStatus })}
+                className={inputClass}
+              >
+                <option value="active">Aktif</option>
+                <option value="inactive">Pasif</option>
+              </select>
+              <p className="mt-1 text-xs text-slate-500">
+                Pasif öğrenciler churn analizinde listelenmez.
+              </p>
+            </Field>
+          )}
           <Field label="Öğrenci e-posta" htmlFor="email">
             <input id="email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputClass} />
           </Field>

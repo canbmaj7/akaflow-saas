@@ -13,6 +13,7 @@ from app.services.crud import (
     update_row,
     upsert_attendance_row,
 )
+from app.services.ml_features import recalculate_student_features
 
 router = APIRouter(prefix="/attendance", tags=["attendance"])
 
@@ -33,6 +34,7 @@ def create_attendance(
 ) -> AttendanceRead:
     payload = body.model_dump(mode="json", exclude_none=True)
     row = upsert_attendance_row(supabase, payload, academy_id)
+    recalculate_student_features(supabase, UUID(row["student_id"]))
     return AttendanceRead.model_validate(row)
 
 
@@ -51,8 +53,11 @@ def update_attendance(
     body: AttendanceUpdate,
     supabase: Annotated[Client, Depends(get_supabase_client)],
 ) -> AttendanceRead:
+    existing = get_row_by_id(supabase, "attendance", attendance_id)
     payload = body.model_dump(mode="json", exclude_none=True)
     row = update_row(supabase, "attendance", attendance_id, payload)
+    student_id = UUID(row.get("student_id") or existing["student_id"])
+    recalculate_student_features(supabase, student_id)
     return AttendanceRead.model_validate(row)
 
 
@@ -61,4 +66,6 @@ def delete_attendance(
     attendance_id: UUID,
     supabase: Annotated[Client, Depends(get_supabase_client)],
 ) -> None:
+    existing = get_row_by_id(supabase, "attendance", attendance_id)
     delete_row(supabase, "attendance", attendance_id)
+    recalculate_student_features(supabase, UUID(existing["student_id"]))

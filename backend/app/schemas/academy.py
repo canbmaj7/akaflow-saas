@@ -11,6 +11,11 @@ class AcademyCreate(BaseModel):
     package_name: str = Field(default="starter", min_length=1)
 
 
+class AcademyUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1)
+    admin_email: EmailStr | None = None
+
+
 class AcademyRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
