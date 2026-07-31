@@ -1,35 +1,20 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
 import { Badge, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { Field, inputClass } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { api } from "@/lib/api/client";
 import { formatAgeLabel } from "@/lib/age";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import type { ChurnPrediction, Payment, Student } from "@/types";
-import {
-  CHURN_FEATURE_LABELS,
-  COURSE_TYPES,
-  EDUCATION_LEVELS,
-} from "@/types";
+import { CHURN_FEATURE_LABELS } from "@/types";
 
 type RiskFilter = "all" | "risky" | "safe";
-
-type DetailForm = {
-  birth_date: string;
-  education_level: string;
-  course_type: string;
-  days_since_last_login: string;
-  logins_last_30_days: string;
-  ai_interactions_last_30_days: string;
-  satisfaction_score: string;
-};
 
 function riskTone(status: ChurnPrediction["risk_status"]) {
   return status === "Riskli" ? ("danger" as const) : ("success" as const);
@@ -54,24 +39,6 @@ function formatFeatureValue(key: string, value: number | string | null | undefin
     return value.toFixed(2);
   }
   return String(value);
-}
-
-function studentToForm(student: Student | undefined): DetailForm {
-  return {
-    birth_date: student?.birth_date ?? "",
-    education_level: student?.education_level ?? "",
-    course_type: student?.course_type ?? "",
-    days_since_last_login:
-      student?.days_since_last_login != null ? String(student.days_since_last_login) : "",
-    logins_last_30_days:
-      student?.logins_last_30_days != null ? String(student.logins_last_30_days) : "",
-    ai_interactions_last_30_days:
-      student?.ai_interactions_last_30_days != null
-        ? String(student.ai_interactions_last_30_days)
-        : "",
-    satisfaction_score:
-      student?.satisfaction_score != null ? String(student.satisfaction_score) : "",
-  };
 }
 
 function FeatureGrid({
@@ -115,11 +82,7 @@ export default function AnalysisPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<ChurnPrediction | null>(null);
-  const [detailForm, setDetailForm] = useState<DetailForm>(studentToForm(undefined));
   const [showDetails, setShowDetails] = useState(false);
-  const [showExtendedEdit, setShowExtendedEdit] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   const loadData = useCallback(() => {
     if (!accessToken) return;
@@ -158,19 +121,6 @@ export default function AnalysisPage() {
     return map;
   }, [payments]);
 
-  const missingCourseCount = useMemo(
-    () => students.filter((s) => !s.course_type).length,
-    [students],
-  );
-
-  const missingPaymentMethodCount = useMemo(() => {
-    let count = 0;
-    for (const student of students) {
-      if (!paymentMethodByStudent.get(student.id)) count += 1;
-    }
-    return count;
-  }, [students, paymentMethodByStudent]);
-
   const filtered = useMemo(() => {
     if (filter === "risky") return predictions.filter((p) => p.risk_status === "Riskli");
     if (filter === "safe") return predictions.filter((p) => p.risk_status === "Güvenli");
@@ -188,55 +138,13 @@ export default function AnalysisPage() {
 
   function openDetail(prediction: ChurnPrediction) {
     setSelected(prediction);
-    setDetailForm(studentToForm(studentMap.get(prediction.student_id)));
     setShowDetails(false);
-    setShowExtendedEdit(false);
-    setSaveError(null);
-  }
-
-  async function handleSave(event: FormEvent) {
-    event.preventDefault();
-    if (!accessToken || !selected) return;
-    setSaving(true);
-    setSaveError(null);
-    if (!detailForm.course_type) {
-      setSaveError("Kurs türü seçilmelidir.");
-      setSaving(false);
-      return;
-    }
-    try {
-      await api.updateStudent(accessToken, selected.student_id, {
-        birth_date: detailForm.birth_date || null,
-        education_level: detailForm.education_level || null,
-        course_type: detailForm.course_type || null,
-        days_since_last_login: detailForm.days_since_last_login
-          ? parseInt(detailForm.days_since_last_login, 10)
-          : null,
-        logins_last_30_days: detailForm.logins_last_30_days
-          ? parseInt(detailForm.logins_last_30_days, 10)
-          : null,
-        ai_interactions_last_30_days: detailForm.ai_interactions_last_30_days
-          ? parseInt(detailForm.ai_interactions_last_30_days, 10)
-          : null,
-        satisfaction_score: detailForm.satisfaction_score
-          ? parseFloat(detailForm.satisfaction_score)
-          : null,
-      });
-      const updated = await api.predictStudent(accessToken, selected.student_id);
-      setSelected(updated);
-      loadData();
-    } catch (err) {
-      setSaveError(err instanceof Error ? err.message : "Kayıt başarısız");
-    } finally {
-      setSaving(false);
-    }
   }
 
   const selectedStudent = selected ? studentMap.get(selected.student_id) : undefined;
   const selectedPaymentMethod = selected
     ? paymentMethodByStudent.get(selected.student_id)
     : undefined;
-  const previewAge = formatAgeLabel(detailForm.birth_date || selectedStudent?.birth_date, selectedStudent?.age);
 
   const profileDefaultKeys = !selectedStudent?.course_type ? ["kurs_turu"] : [];
   const paymentDefaultKeys = !selectedPaymentMethod ? ["odeme_yontemi"] : [];
@@ -305,24 +213,6 @@ export default function AnalysisPage() {
       </div>
 
       {error && <p className="text-sm text-rose-700">{error}</p>}
-
-      <Card className="border-amber-100 bg-amber-50/60">
-        <h2 className="text-sm font-semibold text-amber-950">Veriler nereden geliyor?</h2>
-        <ul className="mt-2 space-y-1 text-sm text-amber-900/90">
-          <li><strong>Doğum tarihi → Yaş</strong> otomatik hesaplanır (<Link href="/students" className="underline">Öğrenciler</Link>)</li>
-          <li><strong>Kurs / eğitim</strong> → Öğrenci kaydında seçilir</li>
-          <li><strong>Ödeme yöntemi</strong> → <Link href="/payments" className="underline">Ödemeler</Link> sayfasında seçilir</li>
-          <li><strong>Devamsızlık</strong> → <Link href="/attendance" className="underline">Yoklama</Link> kayıtlarından hesaplanır</li>
-          <li><strong>Ödev tamamlama</strong> → <Link href="/homework" className="underline">Ödevler</Link> sayfasından kaydedilir</li>
-        </ul>
-        {(missingCourseCount > 0 || missingPaymentMethodCount > 0) && (
-          <p className="mt-3 text-sm font-medium text-amber-800">
-            {missingCourseCount > 0 && `${missingCourseCount} öğrencide kurs türü eksik. `}
-            {missingPaymentMethodCount > 0 &&
-              `${missingPaymentMethodCount} öğrencide ödeme yöntemi tanımlı değil.`}
-          </p>
-        )}
-      </Card>
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card><p className="text-sm text-slate-500">Aktif öğrenci</p><p className="mt-2 text-3xl font-semibold">{stats.active}</p></Card>
@@ -509,85 +399,14 @@ export default function AnalysisPage() {
               )}
             </Card>
 
-            <form onSubmit={handleSave} className="space-y-4 border-t border-slate-100 pt-4">
-              <h3 className="text-sm font-semibold text-slate-900">Profil düzenle</h3>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Doğum tarihi" htmlFor="birth_date">
-                  <input
-                    id="birth_date"
-                    type="date"
-                    value={detailForm.birth_date}
-                    onChange={(e) => setDetailForm({ ...detailForm, birth_date: e.target.value })}
-                    className={inputClass}
-                  />
-                  {(detailForm.birth_date || selectedStudent.birth_date) && (
-                    <p className="mt-1 text-xs text-slate-500">Yaş: {previewAge}</p>
-                  )}
-                </Field>
-                <Field label="Eğitim durumu" htmlFor="education_level">
-                  <select
-                    id="education_level"
-                    value={detailForm.education_level}
-                    onChange={(e) => setDetailForm({ ...detailForm, education_level: e.target.value })}
-                    className={inputClass}
-                  >
-                    <option value="">Seçin</option>
-                    {EDUCATION_LEVELS.map((level) => (
-                      <option key={level} value={level}>{level}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Kurs türü" htmlFor="course_type">
-                  <select
-                    id="course_type"
-                    required
-                    value={detailForm.course_type}
-                    onChange={(e) => setDetailForm({ ...detailForm, course_type: e.target.value })}
-                    className={inputClass}
-                  >
-                    <option value="">Seçin</option>
-                    {COURSE_TYPES.map((course) => (
-                      <option key={course} value={course}>{course}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-
-              <Button
-                type="button"
-                variant="ghost"
-                className="gap-2"
-                onClick={() => setShowExtendedEdit((open) => !open)}
-              >
-                {showExtendedEdit ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                Platform ve akademik alanlar
+            <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+              <Button variant="secondary" type="button" onClick={() => setSelected(null)}>
+                Kapat
               </Button>
-
-              {showExtendedEdit && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Son girişten beri (gün)" htmlFor="days_since_last_login">
-                    <input id="days_since_last_login" type="number" min="0" value={detailForm.days_since_last_login} onChange={(e) => setDetailForm({ ...detailForm, days_since_last_login: e.target.value })} className={inputClass} />
-                  </Field>
-                  <Field label="Son 30 gün giriş" htmlFor="logins_last_30_days">
-                    <input id="logins_last_30_days" type="number" min="0" value={detailForm.logins_last_30_days} onChange={(e) => setDetailForm({ ...detailForm, logins_last_30_days: e.target.value })} className={inputClass} />
-                  </Field>
-                  <Field label="Son 30 gün AI etkileşimi" htmlFor="ai_interactions_last_30_days">
-                    <input id="ai_interactions_last_30_days" type="number" min="0" value={detailForm.ai_interactions_last_30_days} onChange={(e) => setDetailForm({ ...detailForm, ai_interactions_last_30_days: e.target.value })} className={inputClass} />
-                  </Field>
-                  <Field label="Memnuniyet skoru (1-5)" htmlFor="satisfaction_score">
-                    <input id="satisfaction_score" type="number" min="1" max="5" step="0.1" value={detailForm.satisfaction_score} onChange={(e) => setDetailForm({ ...detailForm, satisfaction_score: e.target.value })} className={inputClass} />
-                  </Field>
-                </div>
-              )}
-
-              {saveError && <p className="text-sm text-rose-700">{saveError}</p>}
-              <div className="flex justify-end gap-2">
-                <Button variant="secondary" type="button" onClick={() => setSelected(null)}>Kapat</Button>
-                <Button type="submit" disabled={saving}>
-                  {saving ? "Kaydediliyor..." : "Kaydet ve yeniden tahmin et"}
-                </Button>
-              </div>
-            </form>
+              <Link href="/students">
+                <Button type="button">Öğrenciyi düzenle</Button>
+              </Link>
+            </div>
           </div>
         )}
       </Modal>

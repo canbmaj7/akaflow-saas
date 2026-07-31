@@ -1,30 +1,15 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { Bot, Send } from "lucide-react";
-import { useAuth } from "@/components/auth-provider";
+import { Bot, RotateCcw, Send } from "lucide-react";
+import { useAssistant } from "@/components/assistant-provider";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { inputClass } from "@/components/ui/field";
-import { api } from "@/lib/api/client";
-
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
 
 export default function AssistantPage() {
-  const { accessToken } = useAuth();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      content:
-        "Merhaba! Öğrenci, ödeme ve devamsızlık verileriniz hakkında sorular sorabilirsiniz.",
-    },
-  ]);
+  const { messages, loading, error, sendMessage, resetChat } = useAssistant();
   const [question, setQuestion] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,34 +18,45 @@ export default function AssistantPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!accessToken || !question.trim() || loading) return;
+    if (!question.trim() || loading) return;
 
     const userQuestion = question.trim();
     setQuestion("");
-    setError(null);
-    setMessages((prev) => [...prev, { role: "user", content: userQuestion }]);
-    setLoading(true);
+    await sendMessage(userQuestion);
+  }
 
-    try {
-      const response = await api.askAgent(accessToken, userQuestion);
-      setMessages((prev) => [...prev, { role: "assistant", content: response.answer }]);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Yanıt alınamadı");
-    } finally {
-      setLoading(false);
+  function handleReset() {
+    if (
+      messages.length <= 1 ||
+      window.confirm("Sohbet geçmişi silinsin mi?")
+    ) {
+      resetChat();
+      setQuestion("");
     }
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="inline-flex items-center gap-2 text-2xl font-semibold">
-          <Bot className="h-7 w-7" />
-          AI Asistan
-        </h1>
-        <p className="text-sm text-zinc-500">
-          Akademi verileriniz üzerinde doğal dil sorguları
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="inline-flex items-center gap-2 text-2xl font-semibold">
+            <Bot className="h-7 w-7" />
+            AI Asistan
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Akademi verileriniz üzerinde doğal dil sorguları
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="secondary"
+          className="shrink-0"
+          onClick={handleReset}
+          disabled={loading}
+        >
+          <RotateCcw className="h-4 w-4" />
+          Sohbeti sıfırla
+        </Button>
       </div>
 
       <Card className="flex min-h-[480px] flex-col">

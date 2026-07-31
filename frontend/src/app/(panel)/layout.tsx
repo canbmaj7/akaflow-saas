@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { AcademyProvider } from "@/components/academy-provider";
+import { AssistantProvider } from "@/components/assistant-provider";
 import { AppShell } from "@/components/app-shell";
 import { api, ApiError } from "@/lib/api/client";
 
@@ -51,7 +52,9 @@ export default function PanelLayout({
 
   return (
     <AcademyProvider>
-      <AppShell>{children}</AppShell>
+      <AssistantProvider>
+        <AppShell>{children}</AppShell>
+      </AssistantProvider>
     </AcademyProvider>
   );
 }

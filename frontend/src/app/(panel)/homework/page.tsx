@@ -127,22 +127,13 @@ export default function HomeworkPage() {
       <div className="flex justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900">Ödevler</h1>
-          <p className="text-sm text-slate-500">
-            Ödev kayıtlarından tamamlama oranı otomatik hesaplanır (churn modeli için)
-          </p>
+          <p className="text-sm text-slate-500">Öğrenci ödev kayıtları</p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="h-4 w-4" />
           Ödev ekle
         </Button>
       </div>
-
-      <Card className="border-teal-100 bg-teal-50/50 p-4">
-        <p className="text-sm text-teal-900">
-          Her ödev kaydı öğrencinin <strong>tamamlanan_odev_orani</strong> değerini günceller.
-          Tamamlandı = 1, geç teslim = 0.5, yapılmadı = 0 puan.
-        </p>
-      </Card>
 
       <Card>
         {error && !modalOpen && <p className="mb-4 text-sm text-rose-700">{error}</p>}

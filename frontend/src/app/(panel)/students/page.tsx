@@ -22,6 +22,10 @@ type FormState = {
   course_type: string;
   education_level: string;
   status: StudentStatus;
+  days_since_last_login: string;
+  logins_last_30_days: string;
+  ai_interactions_last_30_days: string;
+  satisfaction_score: string;
 };
 
 const emptyForm: FormState = {
@@ -34,6 +38,10 @@ const emptyForm: FormState = {
   course_type: "",
   education_level: "",
   status: "active",
+  days_since_last_login: "",
+  logins_last_30_days: "",
+  ai_interactions_last_30_days: "",
+  satisfaction_score: "",
 };
 
 export default function StudentsPage() {
@@ -97,6 +105,16 @@ export default function StudentsPage() {
       course_type: student.course_type ?? "",
       education_level: student.education_level ?? "",
       status: student.status,
+      days_since_last_login:
+        student.days_since_last_login != null ? String(student.days_since_last_login) : "",
+      logins_last_30_days:
+        student.logins_last_30_days != null ? String(student.logins_last_30_days) : "",
+      ai_interactions_last_30_days:
+        student.ai_interactions_last_30_days != null
+          ? String(student.ai_interactions_last_30_days)
+          : "",
+      satisfaction_score:
+        student.satisfaction_score != null ? String(student.satisfaction_score) : "",
     });
     setFormError(null);
     setModalOpen(true);
@@ -122,6 +140,18 @@ export default function StudentsPage() {
       course_type: form.course_type,
       education_level: form.education_level || null,
       status: form.status,
+      days_since_last_login: form.days_since_last_login
+        ? parseInt(form.days_since_last_login, 10)
+        : null,
+      logins_last_30_days: form.logins_last_30_days
+        ? parseInt(form.logins_last_30_days, 10)
+        : null,
+      ai_interactions_last_30_days: form.ai_interactions_last_30_days
+        ? parseInt(form.ai_interactions_last_30_days, 10)
+        : null,
+      satisfaction_score: form.satisfaction_score
+        ? parseFloat(form.satisfaction_score)
+        : null,
     };
     try {
       if (editing) {
@@ -165,7 +195,7 @@ export default function StudentsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Öğrenciler</h1>
           <p className="text-sm text-zinc-500">
-            Kayıt, kurs ve profil bilgileri. Durum sütunundaki rozete tıklayarak aktif/pasif değiştirebilirsiniz.
+            Kayıt, kurs, profil ve churn analizi verileri. Durum sütunundaki rozete tıklayarak aktif/pasif değiştirebilirsiniz.
           </p>
         </div>
         <Button onClick={openCreate}>
@@ -299,6 +329,58 @@ export default function StudentsPage() {
               className={inputClass}
             />
           </Field>
+          <div className="space-y-4 border-t border-slate-100 pt-4">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">Platform ve akademik alanlar</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                Churn analizinde kullanılır. Devamsızlık ve ödev oranı diğer sayfalardan otomatik hesaplanır.
+              </p>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Son girişten beri (gün)" htmlFor="days_since_last_login">
+                <input
+                  id="days_since_last_login"
+                  type="number"
+                  min="0"
+                  value={form.days_since_last_login}
+                  onChange={(e) => setForm({ ...form, days_since_last_login: e.target.value })}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Son 30 gün giriş" htmlFor="logins_last_30_days">
+                <input
+                  id="logins_last_30_days"
+                  type="number"
+                  min="0"
+                  value={form.logins_last_30_days}
+                  onChange={(e) => setForm({ ...form, logins_last_30_days: e.target.value })}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Son 30 gün AI etkileşimi" htmlFor="ai_interactions_last_30_days">
+                <input
+                  id="ai_interactions_last_30_days"
+                  type="number"
+                  min="0"
+                  value={form.ai_interactions_last_30_days}
+                  onChange={(e) => setForm({ ...form, ai_interactions_last_30_days: e.target.value })}
+                  className={inputClass}
+                />
+              </Field>
+              <Field label="Memnuniyet skoru (1-5)" htmlFor="satisfaction_score">
+                <input
+                  id="satisfaction_score"
+                  type="number"
+                  min="1"
+                  max="5"
+                  step="0.1"
+                  value={form.satisfaction_score}
+                  onChange={(e) => setForm({ ...form, satisfaction_score: e.target.value })}
+                  className={inputClass}
+                />
+              </Field>
+            </div>
+          </div>
           {editing && (
             <Field label="Öğrenci durumu" htmlFor="status">
               <select
