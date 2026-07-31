@@ -113,3 +113,63 @@ Gerçekleştirilen Sprint Review toplantısında veri bilimi ekibinin model seç
 
 # Sprint 3
 
+- **Backlog düzeni ve Story seçimleri**: 3. Sprint döneminde odak noktamız, Sprint 2 retrospektifinde kararlaştırılan **üretim ortamına geçiş**, **multi-tenant SaaS mimarisi** ve **uçtan uca kullanıcı deneyimi** olmuştur. SQLite tabanlı prototipten Supabase PostgreSQL'e geçiş, frontend panel modüllerinin (öğrenci, ödeme, devamsızlık, ödev, churn analiz, AI asistan) tamamlanması ve canlı deploy (Vercel + Render) hikayeleri önceliklendirilmiştir. Taiga Kanban panosunda işler kapasite dengesi korunarak task'lere bölünmüş ve sprint boyunca şeffaf biçimde takip edilmiştir.
+
+- **Daily Scrum**: Takım içi senkronizasyon Slack üzerinden yazılı Daily Scrum formatında sürdürülmüştür. Bu sprintte deploy ortamı yapılandırması, Supabase Auth redirect URL ayarları, CORS politikaları ve frontend-backend proxy entegrasyonu gibi altyapı konularında karşılaşılan engeller (blocker) günlük raporlarla hızlıca paylaşılmış ve çözülmüştür.
+
+- **Sprint board update**: Sprint 3 sonu güncel Taiga Kanban Board ekran görüntümüz:
+![Taiga Board Sprint 3](ProjectManagement/Sprint3Documents/backlog1.png)
+
+- **Ürün Durumu**: 3. Sprint sonunda AkaFlow, yerel prototipten **canlı erişilebilir bir SaaS ürününe** dönüşmüştür. Platform şu adresten erişilebilir durumdadır: [https://akaflow-saas.vercel.app](https://akaflow-saas.vercel.app)
+
+  **1. Multi-Tenant SaaS Mimarisi (Supabase):** SQLite yerine Supabase PostgreSQL'e geçilmiş; `academies`, `students`, `payments`, `attendance` ve `homework` tabloları migration 001–010 ile oluşturulmuştur. Row Level Security (RLS) politikaları sayesinde her akademi yalnızca kendi verisine erişebilmektedir. Öğrenci kayıtlarına `birth_date`, `course_type`, `homework_completion_rate` ve churn için gerekli ML feature kolonları eklenmiştir.
+
+  **2. Frontend Panel — Tam Operasyonel Modüller:** Next.js App Router ile landing, fiyatlandırma, kayıt/giriş ve yönetici paneli uçtan uca tamamlanmıştır. Panel modülleri: Dashboard, Öğrenciler, Ödemeler, Devamsızlık, Ödev Takibi, Churn Analizi ve AI Asistan. Supabase Auth ile oturum yönetimi; academy setup akışı ile çok kiracılı onboarding sağlanmıştır.
+
+  **3. Churn Analiz Dashboard (`/analysis`):** Churn tahmin arayüzü tek merkezde toplanmıştır. Aktif öğrenciler için risk filtresi (Tümü / Riskli / Güvenli), churn olasılığı, risk seviyesi ve kural tabanlı risk açıklamaları listelenmektedir. Detay modalında 19 ML feature'ı görüntülenir; CRUD işlemleri sonrası `ml_features.py` ile feature'lar otomatik yeniden hesaplanır.
+
+  **4. Ödev Modülü ve ML Entegrasyonu:** `homework` tablosu (migration 010) ile ödev oluşturma, düzenleme ve silme işlemleri panelden yönetilebilir hale getirilmiştir. Ödev tamamlama oranı (`homework_completion_rate`) churn modeline girdi olarak dahil edilmiş; ödev ve devamsızlık CRUD sonrası ML feature recalc tetiklenmektedir.
+
+  **5. AI Asistan — Global Sohbet Deneyimi:** `AssistantProvider` bileşeni ile panel genelinde kalıcı sohbet hafızası (localStorage) sağlanmıştır. Kullanıcı panelde gezinirken AI asistan konuşması korunur; `/api/v1/agent/ask` endpoint'i üzerinden öğrenci, ödeme ve devamsızlık verilerine doğal dilde sorgu yapılabilmektedir.
+
+  **6. Canlı Deploy (Vercel + Render + Supabase):** Frontend Vercel'e, backend Docker imajı Render'a (Frankfurt bölgesi) deploy edilmiştir. `render.yaml` Blueprint dosyası ile altyapı kod olarak tanımlanmış; CORS, health check (`/health`) ve scheduler (e-posta hatırlatma) production ortamında aktiftir. Next.js rewrite proxy ile `API_URL` build sırasında bake edilerek frontend-backend iletişimi sağlanmıştır.
+
+  **7. Demo Veri Seti:** Test akademisi için 20 öğrencili (riskli/güvenli karışık profiller), 20 ödeme, 15 devamsızlık ve 100 ödev kaydından oluşan SQL seed script'i hazırlanmış; canlı demo ve sprint review sunumları için kullanılmıştır.
+
+  #### Canlı Landing Page (Vercel — akaflow-saas.vercel.app)
+  ![Canlı Landing Page](ProjectManagement/Sprint3Documents/backlog2.png)
+  *AkaFlow'un production ortamındaki landing sayfası; kayıt, giriş ve fiyatlandırma akışları canlı erişime açılmıştır.*
+
+  #### Churn Analiz Dashboard — Risk Listesi ve Detay Görünümü
+  ![Churn Analiz Dashboard](ProjectManagement/Sprint3Documents/backlog3.png)
+  *`/analysis` sayfasında aktif öğrenciler için churn olasılığı, risk seviyesi, risk açıklamaları ve 19 ML feature detayının görüntülendiği arayüz.*
+
+  #### Öğrenci Yönetimi Paneli
+  ![Öğrenci Yönetimi](ProjectManagement/Sprint3Documents/backlog4.png)
+  *Öğrenci CRUD, aktif/pasif durumu, kurs türü ve doğum tarihi alanlarıyla birlikte multi-tenant öğrenci listesi.*
+
+  #### Ödev Takip Modülü
+  ![Ödev Takibi](ProjectManagement/Sprint3Documents/backlog5.png)
+  *Ödev oluşturma, durum güncelleme (tamamlandı / tamamlanmadı / gecikmiş) ve ML feature recalc entegrasyonu.*
+
+  #### AI Asistan — Doğal Dil Sorgu Ekranı
+  ![AI Asistan](ProjectManagement/Sprint3Documents/backlog6.png)
+  *Panel genelinde kalıcı sohbet hafızası ile öğrenci, ödeme ve devamsızlık verilerine doğal dilde erişim.*
+
+  #### Production Deploy Altyapısı (Render + Vercel Dashboard)
+  ![Deploy Altyapısı](ProjectManagement/Sprint3Documents/backlog7.png)
+  *Backend Render Docker servisi (`akaflow-api.onrender.com`) ve frontend Vercel deployment'ının canlı durumu.*
+
+  #### Supabase Veritabanı ve Migration Durumu
+  ![Supabase Migration](ProjectManagement/Sprint3Documents/backlog8.png)
+  *Supabase PostgreSQL üzerinde migration 001–010 uygulanmış tablolar ve RLS politikalarının durumu.*
+
+- **Sprint Review**:
+  Sprint Review toplantısında AkaFlow'un yerel prototipten **canlı SaaS ürününe** geçişi başarıyla tamamlandığı doğrulanmıştır. Churn analiz sayfasının aktif öğrenciler için doğru risk sınıflandırması yaptığı, ödev modülünün ML feature recalc ile entegre çalıştığı ve AI asistanın production API üzerinden stabil yanıt verdiği test edilmiştir. Vercel + Render + Supabase üçlüsü ile ücretsiz tier'da uçtan uca demo sunumu gerçekleştirilmiştir. Demo seed verisi ile 20 öğrencili senaryo canlı ortamda gösterilmiştir. Katılımcılar: Tüm ekip üyeleri.
+
+- **Sprint Retrospective:**
+  - Monorepo yapısına geçiş ve Supabase RLS ile multi-tenant izolasyon, kod kalitesini ve ölçeklenebilirliği ciddi ölçüde artırmıştır.
+  - Render free tier cold start (ilk istekte 30–60 sn gecikme) kullanıcı deneyimini etkilemektedir; landing veya panelde bilgilendirme notu eklenmesi değerlendirilmektedir.
+  - Ödev silme ve ödeme silme sonrası ML feature recalc'in tam kapsamlı tetiklenmesi bir sonraki iyileştirme maddesi olarak backlog'a alınmıştır.
+  - AI agent prompt'larına `homework` tablosu desteğinin eklenmesi ve churn analiz sayfası için otomatik testler planlanmıştır.
+
