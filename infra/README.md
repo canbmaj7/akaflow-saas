@@ -23,13 +23,17 @@ REMINDER_DAYS_BEFORE=3
 ENABLE_SCHEDULER=true
 ```
 
-### Frontend env
+### Frontend build args + runtime env
+
+Coolify'da **Build Arguments** ve **Runtime** ikisine de ekleyin:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 API_URL=https://api.sizin-domain.com
 ```
+
+`API_URL` build arg olmadan panel `/api/v1/*` isteklerini `localhost:8000`'e yönlendirir — production'da kırılır.
 
 Detaylı adımlar: [`BASLATMA.md`](../BASLATMA.md) → Coolify Deploy
 

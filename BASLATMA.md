@@ -58,6 +58,23 @@ Supabase → Project Settings → Database → Connection string (URI, pooler):
 postgresql://postgres.[ref]:[password]@aws-0-eu-central-1.pooler.supabase.com:6543/postgres
 ```
 
+## Render Deploy (ücretsiz — backend API)
+
+Kökte [`render.yaml`](render.yaml) var. **Dockerfile repo kökünde değil** — Render'da mutlaka şu ikisi ayarlanmalı:
+
+| Alan | Değer |
+|------|-------|
+| Dockerfile Path | `backend/Dockerfile` |
+| Docker Context | `.` (repo kökü) |
+
+**Manuel Web Service:** Settings → Build → yukarıdaki path'ler. Root Directory boş kalsın.
+
+**Blueprint:** New → Blueprint → repo → env değişkenlerini dashboard'dan doldur → Deploy.
+
+Deploy sonrası: `https://akaflow-api.onrender.com/health`
+
+`CORS_ALLOWED_ORIGINS` = Vercel panel URL'niz (ör. `https://akaflow-saas.vercel.app`)
+
 ## Coolify Deploy (Faz 5)
 
 1. **API uygulaması**
@@ -67,12 +84,15 @@ postgresql://postgres.[ref]:[password]@aws-0-eu-central-1.pooler.supabase.com:65
    - Port: 8000
    - Env: tüm `backend/.env` değişkenleri
 
-2. **Frontend uygulaması**
-   - Base Directory: `frontend`
+2. **Frontend uygulaması**   - Base Directory: `frontend`
    - Dockerfile: `frontend/Dockerfile`
    - Port: 3000
-   - Build args: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
-   - Runtime env: `API_URL=https://api.sizin-domain.com`
+   - **Build args** (build sırasında zorunlu — rewrite'lar build anında bake edilir):
+     - `NEXT_PUBLIC_SUPABASE_URL`
+     - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+     - `API_URL=https://api.sizin-domain.com`
+   - **Runtime env** (AI asistan proxy route için):
+     - `API_URL=https://api.sizin-domain.com`
 
 3. Domain + HTTPS (Coolify otomatik Let's Encrypt)
 

@@ -1,0 +1,38 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+# Dashboard: New → Blueprint → bu repo
+# Manuel Web Service için: Dockerfile Path = backend/Dockerfile, Docker Context = .
+
+services:
+  - type: web
+    name: akaflow-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CORS_ALLOWED_ORIGIN_REGEX
+        value: https://.*\.vercel\.app
+      - key: API_V1_PREFIX
+        value: /api/v1
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: DATABASE_URL
+        sync: false
+      - key: ENABLE_SCHEDULER
+        value: "true"
+      - key: REMINDER_DAYS_BEFORE
+        value: "3"
+      - key: REMINDER_CRON_HOUR
+        value: "8"
